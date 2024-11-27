@@ -1,44 +1,123 @@
-import React, { useState } from "react";
-import { PlusIcon } from "@heroicons/react/solid";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { PlusIcon, PencilIcon, TrashIcon } from "@heroicons/react/solid";
+
+const baseUrl = "https://api-assignment.inveesync.in";
 
 const ProcessSteps = () => {
-  const [processSteps, setProcessSteps] = useState([
-    {
-      id: 1,
-      process_id: 1,
-      item_id: 1,
-      sequence: 1,
-      conversion_ratio: 80,
-      description: "First step",
-    },
-  ]);
-
+  const [processSteps, setProcessSteps] = useState([]);
+  const [editingStep, setEditingStep] = useState(null);
   const [newStep, setNewStep] = useState({
     process_id: "",
     item_id: "",
     sequence: "",
-    conversion_ratio: "",
-    description: "",
+    created_by: "user3",
+    last_updated_by: "user3",
+    createdAt: "",
+    updatedAt: "",
   });
 
+  const fetchProcessSteps = async () => {
+    try {
+      const response = await axios.get(`${baseUrl}/process-step`);
+      setProcessSteps(response.data);
+    } catch (error) {
+      console.error("Error fetching process steps:", error);
+    }
+  };
+  // Fetch process steps
+  useEffect(() => {
+    fetchProcessSteps();
+  }, []);
+
+  // Handle input changes
   const handleInputChange = (e) => {
     setNewStep({ ...newStep, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  // Add or update a process step
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Add validation logic here
-    setProcessSteps([
-      ...processSteps,
-      { id: processSteps.length + 1, ...newStep },
-    ]);
+    const currentTime = new Date().toISOString();
+    const stepWithTimestamps = {
+      ...newStep,
+      updatedAt: currentTime,
+    };
+
+    if (editingStep) {
+      // Update an existing step
+      try {
+        await axios.put(
+          `${baseUrl}/process-step/${editingStep.id}`,
+          stepWithTimestamps
+        );
+        setProcessSteps(
+          processSteps.map((step) =>
+            step.id === editingStep.id
+              ? { ...step, ...stepWithTimestamps }
+              : step
+          )
+        );
+        setEditingStep(null);
+      } catch (error) {
+        console.error(
+          "Error updating process step:",
+          error.response?.data || error.message
+        );
+      }
+    } else {
+      // Add a new step
+      try {
+        const response = await axios.post(`${baseUrl}/process-step`, {
+          ...stepWithTimestamps,
+          createdAt: currentTime,
+        });
+        setProcessSteps([...processSteps, response.data]);
+      } catch (error) {
+        console.error(
+          "Error adding process step:",
+          error.response?.data || error.message
+        );
+      }
+    }
+
+    // Reset form
     setNewStep({
       process_id: "",
       item_id: "",
       sequence: "",
-      conversion_ratio: "",
-      description: "",
+      created_by: "user3",
+      last_updated_by: "user3",
+      createdAt: "",
+      updatedAt: "",
     });
+  };
+
+  // Handle edit
+  const handleEdit = (step) => {
+    setEditingStep(step);
+    setNewStep({
+      process_id: step.process_id,
+      item_id: step.item_id,
+      sequence: step.sequence,
+      created_by: step.created_by,
+      last_updated_by: step.last_updated_by,
+      createdAt: step.createdAt,
+      updatedAt: step.updatedAt,
+    });
+  };
+
+  // Handle delete
+  const handleDelete = async (id) => {
+    try {
+      await axios.delete(`${baseUrl}/process-step/${id}`);
+      setProcessSteps(processSteps.filter((step) => step.id !== id));
+    } catch (error) {
+      console.error(
+        "Error deleting process step:",
+        error.response?.data || error.message
+      );
+    }
   };
 
   return (
@@ -100,40 +179,6 @@ const ProcessSteps = () => {
               required
             />
           </div>
-          <div>
-            <label
-              htmlFor="conversion_ratio"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Conversion Ratio
-            </label>
-            <input
-              type="number"
-              name="conversion_ratio"
-              id="conversion_ratio"
-              value={newStep.conversion_ratio}
-              onChange={handleInputChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              required
-            />
-          </div>
-          <div className="md:col-span-2">
-            <label
-              htmlFor="description"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Process Description
-            </label>
-            <textarea
-              name="description"
-              id="description"
-              rows={3}
-              value={newStep.description}
-              onChange={handleInputChange}
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-              required
-            ></textarea>
-          </div>
         </div>
         <div className="mt-4">
           <button
@@ -141,7 +186,7 @@ const ProcessSteps = () => {
             className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
             <PlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-            Add Process Step
+            {editingStep ? "Update Process Step" : "Add Process Step"}
           </button>
         </div>
       </form>
@@ -159,10 +204,7 @@ const ProcessSteps = () => {
                 Sequence
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Conversion Ratio
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Description
+                Actions
               </th>
             </tr>
           </thead>
@@ -178,11 +220,19 @@ const ProcessSteps = () => {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {step.sequence}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {step.conversion_ratio}%
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {step.description}
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 flex gap-2">
+                  <button
+                    onClick={() => handleEdit(step)}
+                    className="text-blue-600 hover:text-blue-800"
+                  >
+                    <PencilIcon className="h-5 w-5" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(step.id)}
+                    className="text-red-600 hover:text-red-800"
+                  >
+                    <TrashIcon className="h-5 w-5" />
+                  </button>
                 </td>
               </tr>
             ))}

@@ -97,8 +97,7 @@ const ItemsMaster = () => {
           setEditingItem(null);
           toast.success("Item updated successfully");
         } else {
-          
-          const response =await createItem(newItem);
+          const response = await createItem(newItem);
           console.log(response);
           setItems((prevItems) => [...prevItems, response.data]);
           toast.success("Item created successfully");
@@ -222,9 +221,14 @@ const ItemsMaster = () => {
         <table className="min-w-full">
           <thead>
             <tr>
+              <th>ID</th>
               <th>Name</th>
-              <th>Type</th>
+              <th>Tenant_ID</th>
+              <th>Item Description</th>
               <th>UoM</th>
+              <th>Created_by</th>
+              <th>Last_Update_By</th>
+              <th>Type</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -232,9 +236,16 @@ const ItemsMaster = () => {
             {Array.isArray(items) && items.length > 0 ? (
               items.map((item, index) => (
                 <tr key={item?.id || index}>
+                  <td>{item?.id || "N/A"}</td>
                   <td>{item?.internal_item_name || "N/A"}</td>
-                  <td>{item?.type || "N/A"}</td>
+                  <td>{item?.tenant_id || "N/A"}</td>
+                  <td>{item?.item_description || "N/A"}</td>
                   <td>{item?.uom || "N/A"}</td>
+                  <td>{item?.created_by || "N/A"}</td>
+                  <td>{item?.last_updayed_by || "N/A"}</td>
+                  <td>{item?.max_buffer || "N/A"}</td>
+                  <td>{item?.type || "N/A"}</td>
+
                   <td>
                     <button onClick={() => setEditingItem(item)}>Edit</button>
                     <button
