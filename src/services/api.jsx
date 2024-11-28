@@ -21,6 +21,7 @@ export const fetchItems = async () => {
 
 export const createItem = async (data) => {
   console.log(data);
+
   try {
     const payload = {
       tenant_id: data.tenant_id || 1, // Default to 1 if tenant_id is not provided
@@ -230,5 +231,3 @@ export const uploadCSV = async (file) => {
     throw new Error(error.response?.data?.message || "Failed to upload CSV.");
   }
 };
-
-

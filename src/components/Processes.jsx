@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { PlusIcon } from "@heroicons/react/solid";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { useAppContext } from "../context/AppContext";
 
 const Processes = () => {
+  const { state, dispatch } = useAppContext();
   const [processes, setProcesses] = useState([]);
   const [newProcess, setNewProcess] = useState({
     process_name: "",
@@ -17,7 +21,6 @@ const Processes = () => {
 
   const baseUrl = "https://api-assignment.inveesync.in";
 
-  // Fetch processes
   const fetchProcesses = async () => {
     setLoading(true);
     try {
@@ -27,8 +30,10 @@ const Processes = () => {
       }
       const data = await response.json();
       setProcesses(data);
+      // toast.success("Processes loaded successfully!");
     } catch (error) {
       console.error("Error fetching processes:", error);
+      toast.error("Error loading processes.");
     } finally {
       setLoading(false);
     }
@@ -38,12 +43,24 @@ const Processes = () => {
     fetchProcesses();
   }, []);
 
-  // Handle input change
   const handleInputChange = (e) => {
     setNewProcess({ ...newProcess, [e.target.name]: e.target.value });
   };
 
-  // Add process
+  const logAction = (actionType, processDetails) => {
+    const logEntry = {
+      timestamp: new Date().toLocaleString(),
+      user: state.user ? state.user.name : "Guest",
+      action: actionType,
+      details: processDetails,
+    };
+
+    dispatch({
+      type: "ADD_LOG",
+      payload: logEntry,
+    });
+  };
+
   const handleAddProcess = async (e) => {
     e.preventDefault();
     try {
@@ -54,11 +71,14 @@ const Processes = () => {
         },
         body: JSON.stringify(newProcess),
       });
+
       if (!response.ok) {
         throw new Error("Failed to add process");
       }
+
       const addedProcess = await response.json();
       setProcesses([...processes, addedProcess]);
+
       setNewProcess({
         process_name: "",
         factory_id: "",
@@ -69,12 +89,15 @@ const Processes = () => {
         createdAt: "",
         updatedAt: "",
       });
+
+      logAction("Created", `Added new process: ${addedProcess.process_name}`);
+      toast.success("Process added successfully!");
     } catch (error) {
       console.error("Error adding process:", error);
+      toast.error("Failed to add process.");
     }
   };
 
-  // Update process
   const handleUpdateProcess = async (id, updatedData) => {
     try {
       const response = await fetch(`${baseUrl}/process/${id}`, {
@@ -84,39 +107,50 @@ const Processes = () => {
         },
         body: JSON.stringify(updatedData),
       });
+
       if (!response.ok) {
         throw new Error("Failed to update process");
       }
+
       const updatedProcess = await response.json();
       setProcesses(
         processes.map((process) =>
           process.id === id ? updatedProcess : process
         )
       );
+
+      logAction("Updated", `Updated process: ${updatedProcess.process_name}`);
+      toast.success("Process updated successfully!");
     } catch (error) {
       console.error("Error updating process:", error);
+      toast.error("Failed to update process.");
     }
   };
 
-  // Delete process
   const handleDeleteProcess = async (id) => {
     try {
       const response = await fetch(`${baseUrl}/process/${id}`, {
         method: "DELETE",
       });
+
       if (!response.ok) {
         throw new Error("Failed to delete process");
       }
-      const result = await response.json();
+
       setProcesses(processes.filter((process) => process.id !== id));
-      console.log(result.message);
+
+      const deletedProcess = processes.find((process) => process.id === id);
+      logAction("Deleted", `Deleted process: ${deletedProcess.process_name}`);
+      toast.success("Process deleted successfully!");
     } catch (error) {
       console.error("Error deleting process:", error);
+      toast.error("Failed to delete process.");
     }
   };
 
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
+      <ToastContainer />
       <h1 className="text-3xl font-bold mb-6 text-center text-gray-700">
         Processes
       </h1>
@@ -236,27 +270,24 @@ const Processes = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {process.type}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {process.createdAt}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {new Date(process.createdAt).toLocaleString()}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {process.updatedAt}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {new Date(process.updatedAt).toLocaleString()}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap flex space-x-2">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <button
+                      className="text-indigo-600 hover:text-indigo-900 mr-3"
                       onClick={() =>
-                        handleUpdateProcess(process.id, {
-                          ...process,
-                          process_name: process.name,
-                        })
+                        handleUpdateProcess(process.id, { ...process })
                       }
-                      className="text-sm px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
                     >
-                      Update
+                      Edit
                     </button>
                     <button
+                      className="text-red-600 hover:text-red-900"
                       onClick={() => handleDeleteProcess(process.id)}
-                      className="text-sm px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
                     >
                       Delete
                     </button>

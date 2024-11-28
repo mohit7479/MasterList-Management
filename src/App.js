@@ -8,36 +8,36 @@ import BillOfMaterials from './components/BillOfMaterials'
 import ProcessSteps from './components/ProcessSteps'
 import Processes from './components/Processes'
 import FileHandler from './components/FileHandler'
-import Login from './components/Login'
+import BulkDataManagement from "./components/BulkDataManagement";
+import AuditLog from "./components/AuditLog";
+// import Login from './components/Login'
 
 
-const PrivateRoute = ({ element, ...rest }) => {
-  const { state } = useAppContext()
-  // Check if the user is authenticated, if not navigate to login
-  if (!state.user) {
-    return <Navigate to="/login" />
-  }
-  return element
-}
+// const PrivateRoute = ({ element, ...rest }) => {
+//   const { state } = useAppContext()
+//   // Check if the user is authenticated, if not navigate to login
+//   if (!state.user) {
+//     return <Navigate to="/login" />
+//   }
+//   return element
+// }
 
 const AppContent = () => {
   const { state } = useAppContext()
-
-  // If there's no user, show the login page
-  if (!state.user) {
-    return <Login />
-  }
 
   return (
     <Layout>
       <Routes>
         {/* Wrap each route with PrivateRoute to ensure they are protected */}
-        <Route path="/" element={<PrivateRoute element={<Dashboard />} />} />
-        <Route path="/items-master" element={<PrivateRoute element={<ItemsMaster />} />} />
-        <Route path="/bill-of-materials" element={<PrivateRoute element={<BillOfMaterials />} />} />
-        <Route path="/processes" element={<PrivateRoute element={<Processes />} />} />
-        <Route path="/process-steps" element={<PrivateRoute element={<ProcessSteps />} />} />
-        <Route path="/file-handler" element={<PrivateRoute element={<FileHandler />} />} />
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/items-master" element={<ItemsMaster />} />
+        <Route path="/bill-of-materials" element={<BillOfMaterials />} />
+        <Route path="/processes" element={<Processes />} />
+        <Route path="/process-steps" element={< ProcessSteps />} />
+        <Route path="/file-handler" element={<FileHandler />} />
+        <Route path="/bulk-data-management" element={<BulkDataManagement />} />
+        <Route path="/audit-log" element={<AuditLog />} />
+
       </Routes>
     </Layout>
   )

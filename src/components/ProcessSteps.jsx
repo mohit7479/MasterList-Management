@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { PlusIcon, PencilIcon, TrashIcon } from "@heroicons/react/solid";
+import { useAppContext } from "../context/AppContext";
 
 const baseUrl = "https://api-assignment.inveesync.in";
 
 const ProcessSteps = () => {
+  const { dispatch } = useAppContext();
   const [processSteps, setProcessSteps] = useState([]);
   const [editingStep, setEditingStep] = useState(null);
   const [newStep, setNewStep] = useState({

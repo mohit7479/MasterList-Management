@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { PlusIcon } from "@heroicons/react/solid";
 import axios from "axios";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { useAppContext } from "../context/AppContext";
 
 const BASE_URL = "https://api-assignment.inveesync.in";
 
 const BillOfMaterials = () => {
+  const { dispatch } = useAppContext(); // Access dispatch from context
   const [boms, setBoms] = useState([]);
   const [newBom, setNewBom] = useState({
     item_id: "",
@@ -12,10 +16,11 @@ const BillOfMaterials = () => {
     quantity: "",
     created_by: "",
     last_updated_by: "",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
   });
   const [editBomId, setEditBomId] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
   // Fetch BOMs from API
   const fetchBoms = async () => {
@@ -24,7 +29,7 @@ const BillOfMaterials = () => {
       const response = await axios.get(`${BASE_URL}/bom`);
       setBoms(response.data);
     } catch (err) {
-      setError("Failed to fetch BOMs. Please try again later.");
+      toast.error("Failed to fetch BOMs. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -42,6 +47,7 @@ const BillOfMaterials = () => {
   // Add or Update a BOM entry
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (
       !newBom.item_id ||
       !newBom.component_id ||
@@ -49,25 +55,53 @@ const BillOfMaterials = () => {
       !newBom.created_by ||
       !newBom.last_updated_by
     ) {
-      setError("All fields are required.");
+      toast.error("All fields are required.");
       return;
     }
 
     try {
+      const payload = {
+        item_id: parseInt(newBom.item_id, 10),
+        component_id: parseInt(newBom.component_id, 10),
+        quantity: parseInt(newBom.quantity, 10),
+        created_by: newBom.created_by,
+        last_updated_by: newBom.last_updated_by,
+      };
+
       if (editBomId) {
-        // Update existing BOM entry
-        await axios.put(`${BASE_URL}/bom/${editBomId}`, newBom);
+        // Update existing BOM
+        await axios.put(`${BASE_URL}/bom/${editBomId}`, payload);
         setBoms((prev) =>
           prev.map((bom) =>
-            bom.id === editBomId ? { ...bom, ...newBom } : bom
+            bom.id === editBomId ? { ...bom, ...payload } : bom
           )
         );
-        setEditBomId(null);
+        toast.success("BOM updated successfully!");
+        dispatch({
+          type: "ADD_LOG",
+          payload: {
+            timestamp: new Date().toISOString(),
+            user: newBom.last_updated_by,
+            action: "Update",
+            details: `BOM ID ${editBomId} updated with new quantity ${newBom.quantity}`,
+          },
+        });
       } else {
-        // Add new BOM entry
-        const response = await axios.post(`${BASE_URL}/bom`, newBom);
+        // Add new BOM
+        const response = await axios.post(`${BASE_URL}/bom`, payload);
         setBoms([...boms, response.data]);
+        toast.success("BOM added successfully!");
+        dispatch({
+          type: "ADD_LOG",
+          payload: {
+            timestamp: new Date().toISOString(),
+            user: newBom.created_by,
+            action: "Add",
+            details: `New BOM added for Item ID ${newBom.item_id} with quantity ${newBom.quantity}`,
+          },
+        });
       }
+
       setNewBom({
         item_id: "",
         component_id: "",
@@ -75,9 +109,10 @@ const BillOfMaterials = () => {
         created_by: "",
         last_updated_by: "",
       });
-      setError("");
+      setEditBomId(null);
     } catch (err) {
-      setError("Failed to save BOM entry. Please check your input.");
+      console.error("Error:", err.response?.data || err.message);
+      toast.error("Failed to save BOM entry. Please check your input.");
     }
   };
 
@@ -90,8 +125,18 @@ const BillOfMaterials = () => {
     try {
       await axios.delete(`${BASE_URL}/bom/${id}`);
       setBoms(boms.filter((bom) => bom.id !== id));
+      toast.success("BOM deleted successfully!");
+      dispatch({
+        type: "ADD_LOG",
+        payload: {
+          timestamp: new Date().toISOString(),
+          user: "Admin", // Replace with logged-in user if available
+          action: "Delete",
+          details: `BOM ID ${id} deleted`,
+        },
+      });
     } catch (err) {
-      setError("Failed to delete BOM entry. Please try again.");
+      toast.error("Failed to delete BOM entry. Please try again.");
     }
   };
 
@@ -110,8 +155,7 @@ const BillOfMaterials = () => {
   return (
     <div className="p-6">
       <h1 className="text-3xl font-bold mb-6">Bill of Materials</h1>
-
-      {error && <p className="text-red-500 mb-4">{error}</p>}
+      <ToastContainer />
 
       <form
         onSubmit={handleSubmit}
@@ -158,7 +202,7 @@ const BillOfMaterials = () => {
       {loading ? (
         <p>Loading...</p>
       ) : boms.length > 0 ? (
-        <div className="bg-white shadow-md rounded-lg overflow-hidden border">
+        <div className="bg-white shadow-md rounded-lg overflow-hidden border mb-6">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-100">
               <tr>
@@ -200,13 +244,13 @@ const BillOfMaterials = () => {
                   <td className="px-6 py-4 text-sm flex space-x-2">
                     <button
                       onClick={() => handleEdit(bom)}
-                      className="px-4 py-2 text-blue-600 hover:text-white border border-blue-600 hover:bg-blue-600 rounded"
+                      className="px-4 py-2 text-white bg-yellow-500 rounded-md"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(bom.id)}
-                      className="px-4 py-2 text-red-600 hover:text-white border border-red-600 hover:bg-red-600 rounded"
+                      className="px-4 py-2 text-white bg-red-500 rounded-md"
                     >
                       Delete
                     </button>
@@ -217,7 +261,7 @@ const BillOfMaterials = () => {
           </table>
         </div>
       ) : (
-        <p className="text-gray-500">No BOM entries found.</p>
+        <p>No BOM entries available.</p>
       )}
     </div>
   );

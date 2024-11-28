@@ -1,67 +1,48 @@
-export const validateItem = (item = {}) => {
+export const validateItem = (item) => {
   const errors = {};
 
-  // Check for top-level properties
-  if (!item.internal_item_name || item.internal_item_name.trim() === "")
-    errors.internal_item_name = "Internal item name is required";
+  // Check if the item name is provided
+  if (!item.internal_item_name) {
+    errors.internal_item_name = "Item name is required.";
+  }
 
-  if (!item.type || item.type.trim() === "") errors.type = "Type is required";
+  // Check if the item description is provided
+  if (!item.item_description) {
+    errors.item_description = "Item description is required.";
+  }
 
-  if (!item.uom || item.uom.trim() === "")
-    errors.uom = "Unit of Measurement (UoM) is required";
+  // Check if unit of measure (uom) is provided
+  if (!item.uom) {
+    errors.uom = "Unit of measure (UOM) is required.";
+  }
 
-  if (!item.item_description || item.item_description.trim() === "")
-    errors.item_description = "Item description is required";
+  // Check if the type is provided
+  if (!item.type) {
+    errors.type = "Item type is required.";
+  }
 
-  if (item.max_buffer !== undefined && isNaN(item.max_buffer))
-    errors.max_buffer = "Max buffer must be a valid number";
+  // Check if max_buffer and min_buffer are non-negative
+  if (item.max_buffer < 0) {
+    errors.max_buffer = "Max buffer should be a positive number.";
+  }
 
-  if (item.min_buffer !== undefined && isNaN(item.min_buffer))
-    errors.min_buffer = "Min buffer must be a valid number";
+  if (item.min_buffer < 0) {
+    errors.min_buffer = "Min buffer should be a positive number.";
+  }
 
-  if (
-    item.max_buffer !== undefined &&
-    item.min_buffer !== undefined &&
-    item.min_buffer > item.max_buffer
-  )
-    errors.min_buffer = "Min buffer cannot be greater than max buffer";
+  // Check if additional attributes are valid
+  if (item.additional_attributes) {
+    if (!item.additional_attributes.drawing_revision_number) {
+      errors.drawing_revision_number = "Drawing revision number is required.";
+    }
+    if (!item.additional_attributes.drawing_revision_date) {
+      errors.drawing_revision_date = "Drawing revision date is required.";
+    }
+    if (isNaN(item.additional_attributes.avg_weight_needed)) {
+      errors.avg_weight_needed = "Average weight needed should be a number.";
+    }
+  }
 
-  // Check for nested `additional_attributes`
-  const additionalAttributes = item.additional_attributes || {};
-
-  if (
-    !additionalAttributes.drawing_revision_number ||
-    isNaN(additionalAttributes.drawing_revision_number)
-  )
-    errors.drawing_revision_number =
-      "Drawing revision number must be a valid number";
-
-  if (
-    !additionalAttributes.drawing_revision_date ||
-    additionalAttributes.drawing_revision_date.trim() === ""
-  )
-    errors.drawing_revision_date = "Drawing revision date is required";
-
-  if (
-    !additionalAttributes.avg_weight_needed ||
-    isNaN(additionalAttributes.avg_weight_needed)
-  )
-    errors.avg_weight_needed = "Average weight needed must be a valid number";
-
-  if (
-    !additionalAttributes.scrap_type ||
-    additionalAttributes.scrap_type.trim() === ""
-  )
-    errors.scrap_type = "Scrap type is required";
-
-  if (
-    !additionalAttributes.shelf_floor_alternate_name ||
-    additionalAttributes.shelf_floor_alternate_name.trim() === ""
-  )
-    errors.shelf_floor_alternate_name =
-      "Shelf/floor alternate name is required";
-
-  // Return the errors object
   return errors;
 };
 
@@ -146,4 +127,3 @@ export const validateProcessStep = (step) => {
 
   return errors;
 };
-

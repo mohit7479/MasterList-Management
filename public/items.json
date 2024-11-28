@@ -1,0 +1,68 @@
+[
+    {
+        "internal_item_name": "Item A",
+        "tenant_id": 123,
+        "item_description": "Description for Item A",
+        "uom": "kg",
+        "created_by": "user1",
+        "last_updated_by": "user2",
+        "type": "purchase",
+        "max_buffer": 100,
+        "min_buffer": 10,
+        "customer_item_name": "Customer A Item",
+        "is_deleted": false,
+        "createdAt": "2023-04-01T10:00:00Z",
+        "updatedAt": "2023-04-01T10:00:00Z",
+        "additional_attributes": {
+            "drawing_revision_number": 1,
+            "drawing_revision_date": "2023-04-01",
+            "avg_weight_needed": 2.5,
+            "scrap_type": "scrap_a",
+            "shelf_floor_alternate_name": "shelf_1"
+        }
+    },
+    {
+        "internal_item_name": "Item B",
+        "tenant_id": 123,
+        "item_description": "Description for Item B",
+        "uom": "pcs",
+        "created_by": "user1",
+        "last_updated_by": "user2",
+        "type": "component",
+        "max_buffer": 200,
+        "min_buffer": 20,
+        "customer_item_name": "Customer B Item",
+        "is_deleted": false,
+        "createdAt": "2023-05-01T10:00:00Z",
+        "updatedAt": "2023-05-01T10:00:00Z",
+        "additional_attributes": {
+            "drawing_revision_number": 2,
+            "drawing_revision_date": "2023-05-01",
+            "avg_weight_needed": 5.0,
+            "scrap_type": "scrap_b",
+            "shelf_floor_alternate_name": "shelf_2"
+        }
+    },
+    {
+        "internal_item_name": "Item C",
+        "tenant_id": 123,
+        "item_description": "Description for Item C",
+        "uom": "liters",
+        "created_by": "user1",
+        "last_updated_by": "user2",
+        "type": "sell",
+        "max_buffer": 50,
+        "min_buffer": 5,
+        "customer_item_name": "Customer C Item",
+        "is_deleted": false,
+        "createdAt": "2023-06-01T10:00:00Z",
+        "updatedAt": "2023-06-01T10:00:00Z",
+        "additional_attributes": {
+            "drawing_revision_number": 3,
+            "drawing_revision_date": "2023-06-01",
+            "avg_weight_needed": 10.0,
+            "scrap_type": "scrap_c",
+            "shelf_floor_alternate_name": "shelf_3"
+        }
+    }
+]
