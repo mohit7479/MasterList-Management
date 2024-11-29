@@ -1,45 +1,80 @@
-export const validateItem = (item) => {
+export const validateItem = (item, existingItems) => {
   const errors = {};
 
-  // Check if the item name is provided
-  if (!item.internal_item_name) {
-    errors.internal_item_name = "Item name is required.";
+  // Check for empty mandatory fields
+  if (!item.internal_item_name || item.internal_item_name.trim() === "") {
+    errors.internal_item_name = "Internal item name is required.";
+  }
+  if (!item.uom || item.uom.trim() === "") {
+    errors.uom = "Unit of Measure (UOM) is required.";
+  }
+  if (!item.type || item.type.trim() === "") {
+    errors.type = "Type is required.";
   }
 
-  // Check if the item description is provided
-  if (!item.item_description) {
-    errors.item_description = "Item description is required.";
+  // Check for duplicate internal item name
+  if (
+    existingItems &&
+    existingItems.some(
+      (existingItem) =>
+        existingItem.internal_item_name === item.internal_item_name &&
+        existingItem.id !== item.id // Allow updating the same item
+    )
+  ) {
+    errors.internal_item_name = "Duplicate internal item name.";
   }
 
-  // Check if unit of measure (uom) is provided
-  if (!item.uom) {
-    errors.uom = "Unit of measure (UOM) is required.";
+  // Check for valid type
+  const validTypes = ["sell", "component", "purchase"];
+  if (!validTypes.includes(item.type)) {
+    errors.type = `Invalid type. Valid types are: ${validTypes.join(", ")}`;
   }
 
-  // Check if the type is provided
-  if (!item.type) {
-    errors.type = "Item type is required.";
+  // Buffer validation
+  if (item.min_buffer > item.max_buffer) {
+    errors.min_buffer = "Min buffer cannot be greater than max buffer.";
+  }
+  if (item.min_buffer < 0 || item.max_buffer < 0) {
+    errors.min_buffer = "Buffer values must be non-negative.";
   }
 
-  // Check if max_buffer and min_buffer are non-negative
-  if (item.max_buffer < 0) {
-    errors.max_buffer = "Max buffer should be a positive number.";
+  // Type-specific validations
+  if (
+    item.type === "sell" &&
+    (!item.customer_item_name || item.customer_item_name.trim() === "")
+  ) {
+    errors.customer_item_name =
+      "Customer item name is required for 'sell' type.";
   }
 
-  if (item.min_buffer < 0) {
-    errors.min_buffer = "Min buffer should be a positive number.";
-  }
-
-  // Check if additional attributes are valid
+  // Validate additional_attributes
   if (item.additional_attributes) {
-    if (!item.additional_attributes.drawing_revision_number) {
-      errors.drawing_revision_number = "Drawing revision number is required.";
+    if (
+      typeof item.additional_attributes.drawing_revision_number !== "number"
+    ) {
+      errors["additional_attributes.drawing_revision_number"] =
+        "Drawing revision number must be a number.";
     }
-    if (!item.additional_attributes.drawing_revision_date) {
-      errors.drawing_revision_date = "Drawing revision date is required.";
+    if (isNaN(Date.parse(item.additional_attributes.drawing_revision_date))) {
+      errors["additional_attributes.drawing_revision_date"] =
+        "Invalid date format for drawing revision date.";
     }
-    if (isNaN(item.additional_attributes.avg_weight_needed)) {
-      errors.avg_weight_needed = "Average weight needed should be a number.";
+    if (item.additional_attributes.avg_weight_needed < 0) {
+      errors["additional_attributes.avg_weight_needed"] =
+        "Average weight needed cannot be negative.";
+    }
+    if (
+      !item.additional_attributes.scrap_type ||
+      item.additional_attributes.scrap_type.trim() === ""
+    ) {
+      errors["additional_attributes.scrap_type"] = "Scrap type is required.";
+    }
+    if (
+      item.additional_attributes.shelf_floor_alternate_name === null ||
+      item.additional_attributes.shelf_floor_alternate_name.trim() === ""
+    ) {
+      errors["additional_attributes.shelf_floor_alternate_name"] =
+        "Shelf floor alternate name is required.";
     }
   }
 

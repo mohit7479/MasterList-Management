@@ -23,11 +23,7 @@ const Sidebar = () => {
     },
     { name: "Process Steps", icon: ClipboardListIcon, path: "/process-steps" },
     { name: "File Handler", icon: ClipboardListIcon, path: "/file-handler" },
-    {
-      name: "Bulk Data Management",
-      icon: ClipboardListIcon,
-      path: "/bulk-data-management",
-    },
+
     { name: "Audit Log", icon: ClipboardListIcon, path: "/audit-log" },
   ];
 

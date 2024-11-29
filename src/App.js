@@ -10,6 +10,8 @@ import Processes from './components/Processes'
 import FileHandler from './components/FileHandler'
 import BulkDataManagement from "./components/BulkDataManagement";
 import AuditLog from "./components/AuditLog";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 // import Login from './components/Login'
 
 
@@ -27,6 +29,7 @@ const AppContent = () => {
 
   return (
     <Layout>
+      <ToastContainer />
       <Routes>
         {/* Wrap each route with PrivateRoute to ensure they are protected */}
         <Route path="/" element={<Dashboard />} />
@@ -44,12 +47,14 @@ const AppContent = () => {
 }
 
 const App = () => {
-  return (
+  return (<>
+    <ToastContainer />
     <AppProvider>
       <Router>
         <AppContent />
       </Router>
     </AppProvider>
+  </>
   )
 }
 
