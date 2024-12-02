@@ -1,88 +1,53 @@
 export const validateItem = (item, existingItems) => {
   const errors = {};
 
-  // Check for empty mandatory fields
-  if (!item.internal_item_name || item.internal_item_name.trim() === "") {
-    errors.internal_item_name = "Internal item name is required.";
-  }
-  if (!item.uom || item.uom.trim() === "") {
-    errors.uom = "Unit of Measure (UOM) is required.";
-  }
-  if (!item.type || item.type.trim() === "") {
-    errors.type = "Type is required.";
+  if (!item.internal_item_name) {
+    errors.internal_item_name = "Internal Item Name is required";
   }
 
-  // Check for duplicate internal item name
+  if (!item.type) {
+    errors.type = "Type is required";
+  }
+
+  if (item.type === "sell" && !item.additional_attributes.scrap_type) {
+    errors.scrap_type = "Scrap Type is required for 'Sell' items";
+  }
+
+  if (item.min_buffer === null) {
+    errors.min_buffer = "Min buffer is required and should be a number";
+  }
+
+  if (item.max_buffer === null) {
+    errors.max_buffer = "Max buffer is required and should be a number";
+  }
+
   if (
-    existingItems &&
     existingItems.some(
       (existingItem) =>
         existingItem.internal_item_name === item.internal_item_name &&
-        existingItem.id !== item.id // Allow updating the same item
+        existingItem.tenant_id === item.tenant_id
     )
   ) {
-    errors.internal_item_name = "Duplicate internal item name.";
-  }
-
-  // Check for valid type
-  const validTypes = ["sell", "component", "purchase"];
-  if (!validTypes.includes(item.type)) {
-    errors.type = `Invalid type. Valid types are: ${validTypes.join(", ")}`;
-  }
-
-  // Buffer validation
-  if (item.min_buffer > item.max_buffer) {
-    errors.min_buffer = "Min buffer cannot be greater than max buffer.";
-  }
-  if (item.min_buffer < 0 || item.max_buffer < 0) {
-    errors.min_buffer = "Buffer values must be non-negative.";
-  }
-
-  // Type-specific validations
-  if (
-    item.type === "sell" &&
-    (!item.customer_item_name || item.customer_item_name.trim() === "")
-  ) {
-    errors.customer_item_name =
-      "Customer item name is required for 'sell' type.";
-  }
-
-  // Validate additional_attributes
-  if (item.additional_attributes) {
-    if (
-      typeof item.additional_attributes.drawing_revision_number !== "number"
-    ) {
-      errors["additional_attributes.drawing_revision_number"] =
-        "Drawing revision number must be a number.";
-    }
-    if (isNaN(Date.parse(item.additional_attributes.drawing_revision_date))) {
-      errors["additional_attributes.drawing_revision_date"] =
-        "Invalid date format for drawing revision date.";
-    }
-    if (item.additional_attributes.avg_weight_needed < 0) {
-      errors["additional_attributes.avg_weight_needed"] =
-        "Average weight needed cannot be negative.";
-    }
-    if (
-      !item.additional_attributes.scrap_type ||
-      item.additional_attributes.scrap_type.trim() === ""
-    ) {
-      errors["additional_attributes.scrap_type"] = "Scrap type is required.";
-    }
-    if (
-      item.additional_attributes.shelf_floor_alternate_name === null ||
-      item.additional_attributes.shelf_floor_alternate_name.trim() === ""
-    ) {
-      errors["additional_attributes.shelf_floor_alternate_name"] =
-        "Shelf floor alternate name is required.";
-    }
+    errors.internal_item_name =
+      "An item with this Internal Item Name already exists for the tenant";
   }
 
   return errors;
 };
 
-export const validateBOM = (bom) => {
+export const validateBOM = (bom, existingBoms, allItems) => {
   const errors = {};
+
+  // Ensure allItems and existingBoms are arrays
+  if (!Array.isArray(allItems)) {
+    throw new Error("allItems must be an array");
+  }
+  if (!Array.isArray(existingBoms)) {
+    throw new Error("existingBoms must be an array");
+  }
+
+  console.log("Validating BOM", bom);
+  console.log("Checking allItems for matching IDs:", allItems);
 
   // Validate item_id
   if (!bom.item_id || isNaN(Number(bom.item_id))) {
@@ -101,9 +66,60 @@ export const validateBOM = (bom) => {
   // Validate quantity
   if (!bom.quantity || isNaN(Number(bom.quantity))) {
     errors.quantity = "Quantity must be a valid number.";
-  } else if (Number(bom.quantity) <= 0) {
-    errors.quantity = "Quantity must be a positive number.";
+  } else if (Number(bom.quantity) <= 0 || Number(bom.quantity) > 100) {
+    errors.quantity = "Quantity must be between 1 and 100.";
   }
+
+  // Check if item_id exists in allItems
+  const itemExists = allItems.some((item) => item.id === Number(bom.item_id));
+  console.log(
+    `Checking if item ${bom.item_id} exists in allItems: ${itemExists}`
+  );
+  if (!itemExists) {
+    console.log(`Item not found: ${bom.item_id}`);
+    errors.item_id = "Item does not exist in the database.";
+  }
+
+  // Check if component_id exists in allItems
+  const componentExists = allItems.some(
+    (item) => item.id === Number(bom.component_id)
+  );
+  console.log(
+    `Checking if component ${bom.component_id} exists in allItems: ${componentExists}`
+  );
+  if (!componentExists) {
+    console.log(`Component not found: ${bom.component_id}`);
+    errors.component_id = "Component does not exist in the database.";
+  }
+
+  // Additional validation (Sell/Purchase items)
+  const sellItemExists = allItems.some(
+    (item) => item.id === Number(bom.item_id) && item.type === "sell"
+  );
+  if (bom.item_id && !bom.component_id && !sellItemExists) {
+    errors.item_id = "Sell items must exist in the database.";
+  }
+
+  const purchaseItemExists = allItems.some(
+    (item) => item.id === Number(bom.component_id) && item.type === "purchase"
+  );
+  if (bom.component_id && !bom.item_id && !purchaseItemExists) {
+    errors.component_id = "Purchase items must exist in the database.";
+  }
+
+  // Check for duplicates in existingBoms
+  const isDuplicate = existingBoms.some(
+    (existingBom) =>
+      existingBom.item_id === Number(bom.item_id) &&
+      existingBom.component_id === Number(bom.component_id)
+  );
+  if (isDuplicate) {
+    console.log("Duplicate BOM:", bom);
+    errors.item_id =
+      "This Item ID and Component ID combination already exists.";
+  }
+
+  console.log("Validation errors:", errors);
 
   return errors;
 };

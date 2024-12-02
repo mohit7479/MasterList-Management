@@ -2,27 +2,27 @@ import React, { useState, useEffect } from "react";
 import { PlusIcon } from "@heroicons/react/solid";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import { useAppContext } from "../context/AppContext";
+import { validateBOM } from "../utils/validation";
 
 const BASE_URL = "https://api-assignment.inveesync.in";
 
 const BillOfMaterials = () => {
-  const { dispatch } = useAppContext(); // Access dispatch from context
+  const { dispatch } = useAppContext();
   const [boms, setBoms] = useState([]);
   const [newBom, setNewBom] = useState({
     item_id: "",
     component_id: "",
     quantity: "",
-    created_by: "",
-    last_updated_by: "",
+    created_by: "u1",
+    last_updated_by: "u2",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   });
   const [editBomId, setEditBomId] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [allItems, setAllItems] = useState([]); // Fetch this list from your database
 
-  // Fetch BOMs from API
   const fetchBoms = async () => {
     setLoading(true);
     try {
@@ -35,30 +35,28 @@ const BillOfMaterials = () => {
     }
   };
 
-  useEffect(() => {
-    fetchBoms();
-  }, []);
-
-  // Handle input changes
-  const handleInputChange = (e) => {
-    setNewBom({ ...newBom, [e.target.name]: e.target.value });
+  const fetchAllItems = async () => {
+    try {
+      const response = await axios.get(`${BASE_URL}/items`);
+      setAllItems(response.data);
+    } catch (err) {
+      toast.error("Failed to fetch items.");
+    }
   };
 
-  // Add or Update a BOM entry
+  useEffect(() => {
+    fetchBoms();
+    fetchAllItems();
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (
-      !newBom.item_id ||
-      !newBom.component_id ||
-      !newBom.quantity ||
-      !newBom.created_by ||
-      !newBom.last_updated_by
-    ) {
-      toast.error("All fields are required.");
+    const errors = validateBOM(newBom, boms, allItems);
+    if (Object.keys(errors).length > 0) {
+      Object.values(errors).forEach((error) => toast.error(error));
       return;
     }
-
     try {
       const payload = {
         item_id: parseInt(newBom.item_id, 10),
@@ -69,7 +67,6 @@ const BillOfMaterials = () => {
       };
 
       if (editBomId) {
-        // Update existing BOM
         await axios.put(`${BASE_URL}/bom/${editBomId}`, payload);
         setBoms((prev) =>
           prev.map((bom) =>
@@ -77,43 +74,30 @@ const BillOfMaterials = () => {
           )
         );
         toast.success("BOM updated successfully!");
-        dispatch({
-          type: "ADD_LOG",
-          payload: {
-            timestamp: new Date().toISOString(),
-            user: newBom.last_updated_by,
-            action: "Update",
-            details: `BOM ID ${editBomId} updated with new quantity ${newBom.quantity}`,
-          },
-        });
       } else {
-        // Add new BOM
         const response = await axios.post(`${BASE_URL}/bom`, payload);
         setBoms([...boms, response.data]);
         toast.success("BOM added successfully!");
-        dispatch({
-          type: "ADD_LOG",
-          payload: {
-            timestamp: new Date().toISOString(),
-            user: newBom.created_by,
-            action: "Add",
-            details: `New BOM added for Item ID ${newBom.item_id} with quantity ${newBom.quantity}`,
-          },
-        });
       }
 
       setNewBom({
         item_id: "",
         component_id: "",
         quantity: "",
-        created_by: "",
-        last_updated_by: "",
+        created_by: "u1",
+        last_updated_by: "u2",
       });
       setEditBomId(null);
     } catch (err) {
       console.error("Error:", err.response?.data || err.message);
-      toast.error("Failed to save BOM entry. Please check your input.");
+      toast.error(
+        `Error details: ${JSON.stringify(err.response?.data || err.message)}`
+      );
     }
+  };
+
+  const handleInputChange = (e) => {
+    setNewBom({ ...newBom, [e.target.name]: e.target.value });
   };
 
   // Delete a BOM entry
@@ -130,7 +114,7 @@ const BillOfMaterials = () => {
         type: "ADD_LOG",
         payload: {
           timestamp: new Date().toISOString(),
-          user: "Admin", // Replace with logged-in user if available
+          user: "Admin",
           action: "Delete",
           details: `BOM ID ${id} deleted`,
         },
@@ -155,7 +139,6 @@ const BillOfMaterials = () => {
   return (
     <div className="p-6">
       <h1 className="text-3xl font-bold mb-6">Bill of Materials</h1>
-      <ToastContainer />
 
       <form
         onSubmit={handleSubmit}
@@ -216,7 +199,7 @@ const BillOfMaterials = () => {
                 ].map((header, idx) => (
                   <th
                     key={idx}
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                   >
                     {header}
                   </th>
@@ -226,31 +209,31 @@ const BillOfMaterials = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {boms.map((bom) => (
                 <tr key={bom.id}>
-                  <td className="px-6 py-4 text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                     {bom.item_id}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {bom.component_id}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {bom.quantity}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {bom.created_by}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {bom.last_updated_by}
                   </td>
-                  <td className="px-6 py-4 text-sm flex space-x-2">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <button
                       onClick={() => handleEdit(bom)}
-                      className="px-4 py-2 text-white bg-yellow-500 rounded-md"
+                      className="text-indigo-600 hover:text-indigo-900"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(bom.id)}
-                      className="px-4 py-2 text-white bg-red-500 rounded-md"
+                      className="ml-4 text-red-600 hover:text-red-900"
                     >
                       Delete
                     </button>
@@ -261,8 +244,10 @@ const BillOfMaterials = () => {
           </table>
         </div>
       ) : (
-        <p>No BOM entries available.</p>
+        <p>No BOMs found</p>
       )}
+
+      <ToastContainer />
     </div>
   );
 };

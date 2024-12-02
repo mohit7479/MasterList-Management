@@ -1,4 +1,5 @@
 import axios from "axios";
+import { useAppContext } from "../context/AppContext";
 
 // Base URL for API
 const BASE_URL = "https://api-assignment.inveesync.in";

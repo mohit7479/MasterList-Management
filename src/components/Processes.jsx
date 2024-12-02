@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { PlusIcon } from "@heroicons/react/solid";
 import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import { useAppContext } from "../context/AppContext";
 
 const Processes = () => {
@@ -150,7 +149,6 @@ const Processes = () => {
 
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
-      <ToastContainer />
       <h1 className="text-3xl font-bold mb-6 text-center text-gray-700">
         Processes
       </h1>

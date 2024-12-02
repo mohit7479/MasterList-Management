@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from "react";
-import Select from "react-select"; // For searchable dropdown
-import { toast } from "react-toastify"; // For notifications
+import Select from "react-select";
+import { useAppContext } from "../context/AppContext";
+import { toast } from "react-toastify";
 import {
   fetchItems,
   createItem,
   updateItem,
   deleteItem,
-} from "../services/api"; // API calls
-import { validateItem } from "../utils/validation"; // Validation utility
+} from "../services/api";
+import { validateItem } from "../utils/validation";
 
 const typeOptions = [
   { value: "sell", label: "Sell - Items to be sold" },
@@ -15,13 +16,19 @@ const typeOptions = [
   { value: "purchase", label: "Purchase - Items to be bought" },
 ];
 
+const uomOptions = [
+  { value: "kgs", label: "Kgs" },
+  { value: "nos", label: "Nos" },
+];
+
 const ItemsMaster = () => {
   const [items, setItems] = useState([]);
+  const { dispatch } = useAppContext();
   const [newItem, setNewItem] = useState({
     internal_item_name: "",
     tenant_id: 123,
     item_description: "",
-    uom: "",
+    uom: "kgs",
     created_by: "user1",
     last_updated_by: "user2",
     type: "",
@@ -115,6 +122,21 @@ const ItemsMaster = () => {
     }
   };
 
+  const handleUOMChange = (selectedOption) => {
+    const selectedValue = selectedOption?.value || "";
+    if (editingItem) {
+      setEditingItem((prev) => ({
+        ...prev,
+        uom: selectedValue,
+      }));
+    } else {
+      setNewItem((prev) => ({
+        ...prev,
+        uom: selectedValue,
+      }));
+    }
+  };
+
   const handleEdit = (item) => {
     setEditingItem(item);
     setErrors({});
@@ -124,11 +146,15 @@ const ItemsMaster = () => {
     e.preventDefault();
     const itemToValidate = editingItem || newItem;
 
-    // Validation
+    // Create an object to hold validation errors
     const validationErrors = validateItem(itemToValidate, items);
+
+    // Check if there are any validation errors
     if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      toast.error("Validation errors. Please check your inputs.");
+      // Display errors for each field
+      for (const [key, value] of Object.entries(validationErrors)) {
+        toast.error(value); // Display each error message
+      }
       return;
     }
 
@@ -143,6 +169,15 @@ const ItemsMaster = () => {
         );
         setEditingItem(null);
         toast.success("Item updated successfully");
+        dispatch({
+          type: "ADD_LOG",
+          payload: {
+            timestamp: new Date().toISOString(),
+            user: "Admin",
+            action: "Delete",
+            details: `Item ID ${editingItem.id} Updated`,
+          },
+        });
       } else {
         const response = await createItem(newItem);
         setItems((prevItems) => [...prevItems, response.data]);
@@ -162,7 +197,7 @@ const ItemsMaster = () => {
       internal_item_name: "",
       tenant_id: 123,
       item_description: "",
-      uom: "",
+      uom: "kgs",
       created_by: "user1",
       last_updated_by: "user2",
       type: "",
@@ -194,6 +229,15 @@ const ItemsMaster = () => {
       await deleteItem(id);
       setItems((prevItems) => prevItems.filter((item) => item.id !== id));
       toast.success("Item deleted successfully");
+      dispatch({
+        type: "ADD_LOG",
+        payload: {
+          timestamp: new Date().toISOString(),
+          user: "Admin",
+          action: "Delete",
+          details: `Item  ${id} deleted`,
+        },
+      });
     } catch (error) {
       toast.error("Failed to delete item");
     }
@@ -228,6 +272,26 @@ const ItemsMaster = () => {
                   )}
                 </div>
               );
+            } else if (key === "uom") {
+              return (
+                <div key={key}>
+                  <label className="block text-sm font-medium text-gray-700">
+                    UOM
+                  </label>
+                  <Select
+                    options={uomOptions}
+                    value={uomOptions.find(
+                      (option) =>
+                        option.value === (editingItem?.uom || newItem.uom)
+                    )}
+                    onChange={handleUOMChange}
+                    placeholder="Select UOM"
+                  />
+                  {errors[key] && (
+                    <span className="text-red-600 text-sm">{errors[key]}</span>
+                  )}
+                </div>
+              );
             } else if (key === "additional_attributes") {
               return Object.keys(newItem.additional_attributes).map((attr) => (
                 <div key={attr}>
@@ -235,11 +299,7 @@ const ItemsMaster = () => {
                     {attr.replace(/_/g, " ")}
                   </label>
                   <input
-                    type={
-                      typeof newItem.additional_attributes[attr] === "number"
-                        ? "number"
-                        : "text"
-                    }
+                    type="text"
                     name={`additional_attributes.${attr}`}
                     value={
                       editingItem
@@ -247,8 +307,13 @@ const ItemsMaster = () => {
                         : newItem.additional_attributes[attr]
                     }
                     onChange={handleInputChange}
-                    className="mt-1 block w-full border-gray-300 rounded-md py-2 px-3"
+                    className="mt-1 p-2 border border-gray-300 rounded-md"
                   />
+                  {errors[`additional_attributes.${attr}`] && (
+                    <span className="text-red-600 text-sm">
+                      {errors[`additional_attributes.${attr}`]}
+                    </span>
+                  )}
                 </div>
               ));
             } else {
@@ -258,11 +323,11 @@ const ItemsMaster = () => {
                     {key.replace(/_/g, " ")}
                   </label>
                   <input
-                    type={typeof newItem[key] === "number" ? "number" : "text"}
+                    type="text"
                     name={key}
                     value={editingItem ? editingItem[key] : newItem[key]}
                     onChange={handleInputChange}
-                    className="mt-1 block w-full border-gray-300 rounded-md py-2 px-3"
+                    className="mt-1 p-2 border border-gray-300 rounded-md"
                   />
                   {errors[key] && (
                     <span className="text-red-600 text-sm">{errors[key]}</span>
@@ -272,107 +337,62 @@ const ItemsMaster = () => {
             }
           })}
         </div>
-        <div className="mt-6">
+        <div className="flex justify-end mt-6">
+          <button
+            type="button"
+            onClick={handleCancel}
+            className="mr-4 px-6 py-2 bg-gray-300 text-gray-700 rounded-md"
+          >
+            Cancel
+          </button>
           <button
             type="submit"
-            className="bg-indigo-600 text-white py-2 px-4 rounded-md"
+            className="px-6 py-2 bg-blue-600 text-white rounded-md"
           >
-            {editingItem ? "Update Item" : "Create Item"}
+            {editingItem ? "Update" : "Create"} Item
           </button>
-          {editingItem && (
-            <button
-              type="button"
-              onClick={handleCancel}
-              className="ml-4 bg-gray-200 py-2 px-4 rounded-md"
-            >
-              Cancel
-            </button>
-          )}
         </div>
       </form>
 
-      {/* Items Table */}
-      {/* Items Table */}
-      {items && items.length > 0 ? (
-        <table className="min-w-full bg-white border border-gray-300">
-          <thead>
-            <tr>
-              <th className="py-2 px-4 border-b">Id</th>
-              <th className="py-2 px-4 border-b">Internal Name</th>
-              <th className="py-2 px-4 border-b">Description</th>
-              <th className="py-2 px-4 border-b">Type</th>
-              <th className="py-2 px-4 border-b">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item) => {
-              if (!item) return null; // Safeguard against undefined items
-              return (
-                <tr key={item.id}>
-                  <td className="py-2 px-4 border-b"> {item.id || "N/A"}</td>
-                  <td className="py-2 px-4 border-b">
-                    {item.internal_item_name || "N/A"}
-                  </td>
-                  <td className="py-2 px-4 border-b">
-                    {item.item_description || "N/A"}
-                  </td>
-                  <td className="py-2 px-4 border-b">{item.type || "N/A"}</td>
-                  <td className="py-2 px-4 border-b">
-                    <button
-                      className="text-blue-600 mr-2"
-                      onClick={() => handleEdit(item)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="text-red-600"
-                      onClick={() => handleDelete(item.id)}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+      <h2 className="text-2xl font-semibold mb-4">Items List</h2>
+      {isLoading ? (
+        <p>Loading items...</p>
       ) : (
-        <p className="text-gray-600">No items available to display.</p>
+        <div className="space-y-4">
+          {items && items.length > 0 ? (
+            items.map((item) => (
+              <div
+                key={item.id}
+                className="p-4 bg-white rounded-lg shadow flex justify-between items-center"
+              >
+                {item.id}
+                <div>
+                  <h3 className="font-semibold text-lg">
+                    {item.internal_item_name}
+                  </h3>
+                  <p className="text-sm">{item.type}</p>
+                </div>
+                <div>
+                  <button
+                    onClick={() => handleEdit(item)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(item.id)}
+                    className="ml-4 px-4 py-2 bg-red-600 text-white rounded-md"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))
+          ) : (
+            <p>No items available</p>
+          )}
+        </div>
       )}
-
-      {/* <table className="min-w-full bg-white border border-gray-300">
-        <thead>
-          <tr>
-            <th className="py-2 px-4 border-b">Internal Name</th>
-            <th className="py-2 px-4 border-b">Description</th>
-            <th className="py-2 px-4 border-b">Type</th>
-            <th className="py-2 px-4 border-b">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((item) => (
-            <tr key={item.id}>
-              <td className="py-2 px-4 border-b">{item.internal_item_name}</td>
-              <td className="py-2 px-4 border-b">{item.item_description}</td>
-              <td className="py-2 px-4 border-b">{item.type}</td>
-              <td className="py-2 px-4 border-b">
-                <button
-                  className="text-blue-600 mr-2"
-                  onClick={() => handleEdit(item)}
-                >
-                  Edit
-                </button>
-                <button
-                  className="text-red-600"
-                  onClick={() => handleDelete(item.id)}
-                >
-                  Delete
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table> */}
     </div>
   );
 };

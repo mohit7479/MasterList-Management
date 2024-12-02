@@ -9,9 +9,7 @@ const MainNavigation = () => {
   // Map categories to their routes
   const categories = {
     "Items Master": "/items-master",
-    Processes: "/processes",
     "Bill of Materials (BoM)": "/bill-of-materials",
-    "Process Steps": "/process-steps",
   };
 
   // Determine the active tab based on the current route
@@ -26,12 +24,12 @@ const MainNavigation = () => {
           if (path) navigate(path); // Navigate to the corresponding route on tab change
         }}
       >
-        <Tab.List className="flex p-1 space-x-1 bg-blue-900/20 rounded-xl">
+        <Tab.List className="flex p-1 space-x-1 bg-blue-900/20 rounded-xl flex-wrap sm:flex-nowrap">
           {Object.keys(categories).map((category) => (
             <Tab
               key={category}
               className={({ selected }) =>
-                `w-full py-2.5 text-sm font-medium leading-5 text-blue-700 rounded-lg
+                `w-full sm:w-auto py-2.5 text-sm font-medium leading-5 text-blue-700 rounded-lg
                  focus:outline-none focus:ring-2 ring-offset-2 ring-offset-blue-400 ring-white ring-opacity-60
                  ${
                    selected

@@ -16,8 +16,8 @@ import { toast } from "react-toastify";
 const Dashboard = () => {
   const [itemsCount, setItemsCount] = useState(0);
   const [bomsCount, setBomsCount] = useState(0);
-  const [processesCount, setProcessesCount] = useState(0);
-  const [processStepsCount, setProcessStepsCount] = useState(0);
+  // const [processesCount, setProcessesCount] = useState(0);
+  // const [processStepsCount, setProcessStepsCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -33,15 +33,11 @@ const Dashboard = () => {
         const [items, boms, processes, processSteps] = await Promise.all([
           fetch(`${API_BASE_URL}/items`).then((res) => res.json()),
           fetch(`${API_BASE_URL}/bom`).then((res) => res.json()),
-          fetch(`${API_BASE_URL}/process`).then((res) => res.json()),
-          fetch(`${API_BASE_URL}/process-step`).then((res) => res.json()),
         ]);
 
         // Validate and update state
         setItemsCount(items.length || 0);
         setBomsCount(boms.length || 0);
-        setProcessesCount(processes.length || 0);
-        setProcessStepsCount(processSteps.length || 0);
       } catch (err) {
         console.error("Error fetching dashboard data:", err);
         setError("Failed to fetch dashboard data. Please try again later.");
@@ -58,15 +54,11 @@ const Dashboard = () => {
   const pieData = [
     { name: "Items", value: itemsCount },
     { name: "BOMs", value: bomsCount },
-    { name: "Processes", value: processesCount },
-    { name: "Process Steps", value: processStepsCount },
   ];
 
   const barData = [
     { name: "Items", count: itemsCount },
     { name: "BOMs", count: bomsCount },
-    { name: "Processes", count: processesCount },
-    { name: "Process Steps", count: processStepsCount },
   ];
 
   if (isLoading) {
@@ -90,7 +82,7 @@ const Dashboard = () => {
   return (
     <div className="p-6">
       <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
         {/* Pie Chart Section */}
         <div className="bg-white p-6 rounded-lg shadow">
           <h2 className="text-xl font-semibold mb-4">Data Distribution</h2>
