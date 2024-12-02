@@ -26,9 +26,9 @@ const Sidebar = () => {
 
   return (
     <div
-      className={`flex flex-col bg-gray-800 ${
-        isSidebarOpen ? "w-64" : "w-16"
-      } transition-all duration-300 ease-in-out`}
+      className={`flex flex-col bg-gray-800 transition-all duration-300 ease-in-out ${
+        isSidebarOpen ? "w-64" : "w-0 md:w-64"
+      } md:w-64`} // Sidebar width for small and large screens
     >
       {/* Sidebar Header */}
       <div className="flex items-center justify-between h-16 bg-gray-900 px-4">
