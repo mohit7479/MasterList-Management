@@ -1,26 +1,64 @@
 export const validateItem = (item, existingItems) => {
   const errors = {};
 
-  if (!item.internal_item_name) {
+  // Mandatory Fields Validation
+  if (!item.internal_item_name || item.internal_item_name.trim() === "") {
     errors.internal_item_name = "Internal Item Name is required";
   }
 
-  if (!item.type) {
-    errors.type = "Type is required";
+  if (!item.type || !["sell", "purchase", "component"].includes(item.type)) {
+    errors.type =
+      "Type is required and must be one of 'sell', 'purchase', or 'component'";
   }
 
-  if (item.type === "sell" && !item.additional_attributes.scrap_type) {
+  if (!item.uom || !["kgs", "nos"].includes(item.uom)) {
+    errors.uom = "UoM is required and must be one of 'kgs' or 'nos'";
+  }
+
+  if (
+    !item.additional_attributes ||
+    !item.additional_attributes.hasOwnProperty("avg_weight_needed")
+  ) {
+    // If additional_attributes is not available or avg_weight_needed is not available
+    errors["additional_attributes.avg_weight_needed"] =
+      "Average weight field is not available";
+  } else {
+    if (!item.additional_attributes.avg_weight_needed) {
+      errors["additional_attributes.avg_weight_needed"] =
+        "Average weight is required";
+    } else {
+      // Check if avg_weight_needed is a string and convert it
+      if (typeof item.additional_attributes.avg_weight_needed === "string") {
+        const lowerCaseValue =
+          item.additional_attributes.avg_weight_needed.toLowerCase();
+
+        if (lowerCaseValue === "true") {
+          item.additional_attributes.avg_weight_needed = true;
+        } else if (lowerCaseValue === "false") {
+          item.additional_attributes.avg_weight_needed = false;
+        } else {
+          errors["additional_attributes.avg_weight_needed"] =
+            "Avg_weight_needed must be a boolean";
+        }
+      }
+
+      // After converting, check if it's a boolean
+      if (typeof item.additional_attributes.avg_weight_needed !== "boolean") {
+        errors["additional_attributes.avg_weight_needed"] =
+          "Avg_weight_needed must be a boolean";
+      }
+    }
+  }
+
+  if (
+    item.type === "sell" &&
+    (!item.additional_attributes?.scrap_type ||
+      item.additional_attributes.scrap_type.trim() === "")
+  ) {
     errors.scrap_type = "Scrap Type is required for 'Sell' items";
   }
 
-  if (item.min_buffer === null) {
-    errors.min_buffer = "Min buffer is required and should be a number";
-  }
-
-  if (item.max_buffer === null) {
-    errors.max_buffer = "Max buffer is required and should be a number";
-  }
-
+  // Key Validations
   if (
     existingItems.some(
       (existingItem) =>
@@ -31,6 +69,56 @@ export const validateItem = (item, existingItems) => {
     errors.internal_item_name =
       "An item with this Internal Item Name already exists for the tenant";
   }
+
+  // Default values for buffers if null
+  if (
+    item.min_buffer == null && // Covers both null and undefined
+    (item.type === "sell" || item.type === "purchase")
+  ) {
+    errors.min_buffer =
+      "min_buffer cannot be null for 'sell' or 'purchase' type";
+  }
+
+  if (item.max_buffer === null || item.max_buffer === undefined) {
+    item.max_buffer = 0; // Default Max buffer to 0
+  }
+
+  // Validate buffers
+  if (item.min_buffer < 0) {
+    errors.min_buffer = "Min buffer cannot be negative";
+  }
+  if (item.max_buffer < 0) {
+    errors.max_buffer = "Max buffer cannot be negative";
+  }
+  if (item.max_buffer < item.min_buffer) {
+    errors.max_buffer =
+      "Max buffer must be greater than or equal to Min buffer";
+  }
+
+  // Additional Validations
+  if (
+    (item.type === "sell" || item.type === "purchase") &&
+    item.min_buffer === 0
+  ) {
+    errors.min_buffer =
+      "Min buffer is required for 'Sell' and 'Purchase' items";
+  }
+
+  // Check for system-generated fields (if required to validate in the system):
+  const systemGeneratedFields = [
+    "created_by",
+    "tenant_id",
+    "id",
+    "createdAt",
+    "updatedAt",
+  ];
+  systemGeneratedFields.forEach((field) => {
+    if (!item[field]) {
+      errors[
+        field
+      ] = `${field} is a system-generated field and cannot be empty`;
+    }
+  });
 
   return errors;
 };

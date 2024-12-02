@@ -9,6 +9,7 @@ import {
   deleteItem,
 } from "../services/api";
 import { validateItem } from "../utils/validation";
+import { boolean } from "zod";
 
 const typeOptions = [
   { value: "sell", label: "Sell - Items to be sold" },
@@ -42,7 +43,7 @@ const ItemsMaster = () => {
     additional_attributes: {
       drawing_revision_number: 1,
       drawing_revision_date: "",
-      avg_weight_needed: 0,
+      avg_weight_needed: boolean,
       scrap_type: "",
       shelf_floor_alternate_name: "",
     },
@@ -298,17 +299,31 @@ const ItemsMaster = () => {
                   <label className="block text-sm font-medium text-gray-700">
                     {attr.replace(/_/g, " ")}
                   </label>
-                  <input
-                    type="text"
-                    name={`additional_attributes.${attr}`}
-                    value={
-                      editingItem
-                        ? editingItem.additional_attributes[attr]
-                        : newItem.additional_attributes[attr]
-                    }
-                    onChange={handleInputChange}
-                    className="mt-1 p-2 border border-gray-300 rounded-md"
-                  />
+                  {attr === "avg_weight_needed" ? (
+                    <input
+                      type="checkbox"
+                      name={`additional_attributes.${attr}`}
+                      checked={
+                        editingItem
+                          ? editingItem.additional_attributes[attr]
+                          : newItem.additional_attributes[attr]
+                      }
+                      onChange={handleInputChange}
+                      className="mt-1"
+                    />
+                  ) : (
+                    <input
+                      type="text"
+                      name={`additional_attributes.${attr}`}
+                      value={
+                        editingItem
+                          ? editingItem.additional_attributes[attr]
+                          : newItem.additional_attributes[attr]
+                      }
+                      onChange={handleInputChange}
+                      className="mt-1 p-2 border border-gray-300 rounded-md"
+                    />
+                  )}
                   {errors[`additional_attributes.${attr}`] && (
                     <span className="text-red-600 text-sm">
                       {errors[`additional_attributes.${attr}`]}
@@ -316,24 +331,6 @@ const ItemsMaster = () => {
                   )}
                 </div>
               ));
-            } else {
-              return (
-                <div key={key}>
-                  <label className="block text-sm font-medium text-gray-700">
-                    {key.replace(/_/g, " ")}
-                  </label>
-                  <input
-                    type="text"
-                    name={key}
-                    value={editingItem ? editingItem[key] : newItem[key]}
-                    onChange={handleInputChange}
-                    className="mt-1 p-2 border border-gray-300 rounded-md"
-                  />
-                  {errors[key] && (
-                    <span className="text-red-600 text-sm">{errors[key]}</span>
-                  )}
-                </div>
-              );
             }
           })}
         </div>
