@@ -69,25 +69,6 @@ const Sidebar = () => {
           </NavLink>
         ))}
       </nav>
-
-      {/* Pending Setup */}
-      <div className="p-4 bg-gray-700">
-        <h3
-          className={`text-white font-semibold mb-2 ${
-            isSidebarOpen ? "" : "hidden"
-          }`}
-        >
-          Pending Setup
-        </h3>
-        <ul className="space-y-2">
-          <li className="flex items-center text-gray-300">
-            <ExclamationCircleIcon className="h-5 w-5 mr-2 text-yellow-400" />
-            <span className={`${isSidebarOpen ? "" : "hidden"}`}>
-              Complete Items Master
-            </span>
-          </li>
-        </ul>
-      </div>
     </div>
   );
 };
