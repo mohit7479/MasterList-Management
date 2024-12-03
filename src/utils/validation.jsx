@@ -5,9 +5,9 @@ export const validateItem = (item, existingItems) => {
   if (!item.internal_item_name || item.internal_item_name.trim() === "") {
     errors.internal_item_name = "Internal Item Name is required";
   }
-//  if (!item.tenant_id || item.tenant_id === "null") {
-  //  errors.tenant_id = "Tenant Id is required and cannot be 'null'";
- // }
+  if (!item.tenant_id || item.tenant_id === "null") {
+    errors.tenant_id = "Tenant Id is required and cannot be 'null'";
+  }
 
   if (!item.type || !["sell", "purchase", "component"].includes(item.type)) {
     errors.type =
@@ -18,12 +18,9 @@ export const validateItem = (item, existingItems) => {
     errors.uom = "UoM is required and must be one of 'kgs' or 'nos'";
   }
 
-  if (
-    item.type === "sell" || 
-    item.type === "purchase"
-  ) {
+  if (item.type === "sell" || item.type === "purchase") {
     if (
-      !item.additional_attributes || 
+      !item.additional_attributes ||
       !item.additional_attributes.hasOwnProperty("avg_weight_needed")
     ) {
       // If additional_attributes is not available or avg_weight_needed is not available
@@ -38,7 +35,7 @@ export const validateItem = (item, existingItems) => {
         if (typeof item.additional_attributes.avg_weight_needed === "string") {
           const lowerCaseValue =
             item.additional_attributes.avg_weight_needed.toLowerCase();
-  
+
           if (lowerCaseValue === "true") {
             item.additional_attributes.avg_weight_needed = true;
           } else if (lowerCaseValue === "false") {
@@ -48,7 +45,7 @@ export const validateItem = (item, existingItems) => {
               "Avg_weight_needed must be a boolean";
           }
         }
-  
+
         // After converting, check if it's a boolean
         if (typeof item.additional_attributes.avg_weight_needed !== "boolean") {
           errors["additional_attributes.avg_weight_needed"] =
@@ -57,7 +54,6 @@ export const validateItem = (item, existingItems) => {
       }
     }
   }
-  
 
   if (
     item.type === "sell" &&
