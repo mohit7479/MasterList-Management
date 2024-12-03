@@ -5,9 +5,9 @@ export const validateItem = (item, existingItems) => {
   if (!item.internal_item_name || item.internal_item_name.trim() === "") {
     errors.internal_item_name = "Internal Item Name is required";
   }
-  if (!item.tenant_id || item.tenant_id === "null") {
-    errors.tenant_id = "Tenant Id is required and cannot be 'null'";
-  }
+//  if (!item.tenant_id || item.tenant_id === "null") {
+  //  errors.tenant_id = "Tenant Id is required and cannot be 'null'";
+ // }
 
   if (!item.type || !["sell", "purchase", "component"].includes(item.type)) {
     errors.type =
