@@ -30,7 +30,7 @@ const MainNavigation = () => {
               key={category}
               className={({ selected }) =>
                 `w-full sm:w-auto py-2.5 text-sm font-medium leading-5 text-blue-700 rounded-lg
-                 focus:outline-none focus:ring-2 ring-offset-2 ring-offset-blue-400 ring-white ring-opacity-60
+                 focus:outline-none focus:ring-2 ring-offset-2 ring-offset-blue-400 ring-white ring-opacity-60 ml-4 mr-6
                  ${
                    selected
                      ? "bg-white shadow"
