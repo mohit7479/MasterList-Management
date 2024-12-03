@@ -352,44 +352,53 @@ const ItemsMaster = () => {
       </form>
 
       <h2 className="text-2xl font-semibold mb-4">Items List</h2>
-      {isLoading ? (
-        <p>Loading items...</p>
-      ) : (
-        <div className="space-y-4">
-          {items && items.length > 0 ? (
-            items.map((item) => (
-              <div
-                key={item.id}
-                className="p-4 bg-white rounded-lg shadow flex justify-between items-center"
-              >
-                {item.id}
-                <div>
-                  <h3 className="font-semibold text-lg">
-                    {item.internal_item_name}
-                  </h3>
-                  <p className="text-sm">{item.type}</p>
-                </div>
-                <div>
+{isLoading ? (
+  <p>Loading items...</p>
+) : (
+  <div className="overflow-x-auto">
+    {items && items.length > 0 ? (
+      <table className="min-w-full table-auto bg-white rounded-lg shadow">
+        <thead>
+          <tr className="bg-gray-200">
+            <th className="px-4 py-2 text-left font-semibold text-gray-700">ID</th>
+            <th className="px-4 py-2 text-left font-semibold text-gray-700">Item Name</th>
+            <th className="px-4 py-2 text-left font-semibold text-gray-700">Type</th>
+            <th className="px-4 py-2 text-left font-semibold text-gray-700">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {[...items]
+            .sort((a, b) => a.id - b.id) // Sort items by ID in ascending order
+            .map((item) => (
+              <tr key={item.id} className="border-t hover:bg-gray-100">
+                <td className="px-4 py-2">{item.id}</td>
+                <td className="px-4 py-2">{item.internal_item_name}</td>
+                <td className="px-4 py-2">{item.type}</td>
+                <td className="px-4 py-2">
                   <button
                     onClick={() => handleEdit(item)}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md"
+                    className="px-3 py-1 bg-blue-600 text-white rounded-md"
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => handleDelete(item.id)}
-                    className="ml-4 px-4 py-2 bg-red-600 text-white rounded-md"
+                    className="ml-2 px-3 py-1 bg-red-600 text-white rounded-md"
                   >
                     Delete
                   </button>
-                </div>
-              </div>
-            ))
-          ) : (
-            <p>No items available</p>
-          )}
-        </div>
-      )}
+                </td>
+              </tr>
+            ))}
+        </tbody>
+      </table>
+    ) : (
+      <p>No items available</p>
+    )}
+  </div>
+)}
+
+
     </div>
   );
 };
