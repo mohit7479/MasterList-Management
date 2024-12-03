@@ -16,39 +16,45 @@ export const validateItem = (item, existingItems) => {
   }
 
   if (
-    !item.additional_attributes ||
-    !item.additional_attributes.hasOwnProperty("avg_weight_needed")
+    item.type === "sell" || 
+    item.type === "purchase"
   ) {
-    // If additional_attributes is not available or avg_weight_needed is not available
-    errors["additional_attributes.avg_weight_needed"] =
-      "Average weight field is not available";
-  } else {
-    if (!item.additional_attributes.avg_weight_needed) {
+    if (
+      !item.additional_attributes || 
+      !item.additional_attributes.hasOwnProperty("avg_weight_needed")
+    ) {
+      // If additional_attributes is not available or avg_weight_needed is not available
       errors["additional_attributes.avg_weight_needed"] =
-        "Average weight is required";
+        "Average weight field is not available";
     } else {
-      // Check if avg_weight_needed is a string and convert it
-      if (typeof item.additional_attributes.avg_weight_needed === "string") {
-        const lowerCaseValue =
-          item.additional_attributes.avg_weight_needed.toLowerCase();
-
-        if (lowerCaseValue === "true") {
-          item.additional_attributes.avg_weight_needed = true;
-        } else if (lowerCaseValue === "false") {
-          item.additional_attributes.avg_weight_needed = false;
-        } else {
+      if (!item.additional_attributes.avg_weight_needed) {
+        errors["additional_attributes.avg_weight_needed"] =
+          "Average weight is required";
+      } else {
+        // Check if avg_weight_needed is a string and convert it
+        if (typeof item.additional_attributes.avg_weight_needed === "string") {
+          const lowerCaseValue =
+            item.additional_attributes.avg_weight_needed.toLowerCase();
+  
+          if (lowerCaseValue === "true") {
+            item.additional_attributes.avg_weight_needed = true;
+          } else if (lowerCaseValue === "false") {
+            item.additional_attributes.avg_weight_needed = false;
+          } else {
+            errors["additional_attributes.avg_weight_needed"] =
+              "Avg_weight_needed must be a boolean";
+          }
+        }
+  
+        // After converting, check if it's a boolean
+        if (typeof item.additional_attributes.avg_weight_needed !== "boolean") {
           errors["additional_attributes.avg_weight_needed"] =
             "Avg_weight_needed must be a boolean";
         }
       }
-
-      // After converting, check if it's a boolean
-      if (typeof item.additional_attributes.avg_weight_needed !== "boolean") {
-        errors["additional_attributes.avg_weight_needed"] =
-          "Avg_weight_needed must be a boolean";
-      }
     }
   }
+  
 
   if (
     item.type === "sell" &&
